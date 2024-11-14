@@ -1,0 +1,12 @@
+qdrant-client
+sentence-transformers
+numpy
+Pillow
+requests
+scikit-learn
+pandas
+boto3==1.34.13
+awswrangler>=3.3.0
+oauthlib==3.2.2
+aioboto3==13.1.1
+sqlglot[rs]==24.1.0
