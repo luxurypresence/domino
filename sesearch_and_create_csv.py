@@ -9,24 +9,25 @@ from property_searcher import PropertySearcher
 # Function to fetch all property IDs from a collection in Qdrant
 def get_all_property_ids_from_collection(client, collection_name):
     # Initialize the list for property IDs
-    property_ids = []
+    property_data = []
     next_page_offset = None
 
     # Use `scroll` method to iterate over all points in the collection
     while True:
         # Unpack the returned tuple into records and next_page_offset
         records, next_page_offset = client.scroll(collection_name=collection_name, offset=next_page_offset, limit=100)
-
-        # Extract IDs from records and add them to the list
-        property_ids.extend([record.id for record in records])
-
+        for record in records:
+            print(record.id)
+            print(record.payload.get("lp_listing_id"))
+            data = {
+                "property_id": record.id,
+                "lp_listing_id": record.payload.get("lp_listing_id"),
+            }
+            property_data.append(data)
         # Break if there are no more pages
         if next_page_offset is None:
             break
-
-    print(property_ids)
-
-    return property_ids
+    return property_data
 
 # Function to fetch all property IDs from a collection in Qdrant
 # def get_all_property_ids_from_collection(client, collection_name):
@@ -44,21 +45,21 @@ def get_all_property_ids_from_collection(client, collection_name):
 
 
 # Function to search similar properties for all properties in Qdrant or from provided property ID list, and save to CSV
-def search_and_save_similar_properties(client, searcher, filters=None, property_id_list=None, mode=SearchMode.BALANCED,
+def search_and_save_similar_properties(client, searcher, filters=None, property_data=None, mode=SearchMode.BALANCED,
                                        top_k=5, output_csv="similar_properties.csv"):
     # Step 1: Retrieve property IDs from Qdrant if no list is provided
-    if property_id_list is not None:
+    if property_data is not None:
         logging.info("Using provided property ID list for similarity search.")
     else:
         collection_name = "location_vectors"  # Replace with your main collection name
         logging.info(f"No property ID list provided, retrieving from collection '{collection_name}'.")
-        property_id_list = get_all_property_ids_from_collection(client, collection_name)
+        property_data = get_all_property_ids_from_collection(client, collection_name)
 
         # Ensure that property_id_list is a list, even if empty
-        if property_id_list is None:
+        if property_data is None:
             logging.error(f"Failed to retrieve property IDs from collection '{collection_name}'. Exiting function.")
             return
-        logging.info(f"Retrieved {len(property_id_list)} property IDs from collection '{collection_name}'.")
+        logging.info(f"Retrieved {len(property_data)} property IDs from collection '{collection_name}'.")
 
     # Step 2: Open CSV file to write similar properties for each property_id
     with open(output_csv, mode="w", newline="") as csvfile:
@@ -67,22 +68,22 @@ def search_and_save_similar_properties(client, searcher, filters=None, property_
         csv_writer.writerow(["property_id", "similar_property_ids"])
 
         # Iterate over each property ID to find similar properties
-        for property_id in property_id_list:
+        for property in property_data:
             # Find similar properties
             similar_properties = searcher.search_similar_properties(
-                property_id=property_id,
+                property_id=property['property_id'],
                 mode=mode,
                 filters=filters,  # Pass filters (can be None)
                 top_k=top_k
             )
 
             # Extract similar property IDs
-            similar_property_ids = [prop["id"] for prop in similar_properties]
+            similar_property_ids = [prop["lp_listing_id"] for prop in similar_properties]
 
             # Write property_id and similar_property_ids to CSV
-            csv_writer.writerow([property_id, similar_property_ids])
+            csv_writer.writerow([property['lp_listing_id'], similar_property_ids])
 
-            logging.info(f"Similar properties for {property_id}: {similar_property_ids}")
+            logging.info(f"Similar properties for {property['property_id']} and listing_id {property['lp_listing_id']}: {similar_property_ids}")
 
     logging.info(f"Similar properties saved to {output_csv}")
 
@@ -106,8 +107,8 @@ if __name__ == "__main__":
     )
 
     # Example property ID list (optional; will fetch from Qdrant if not provided)
-    property_id_list = None  # Set to None to fetch from Qdrant
+    property_data = None  # Set to None to fetch from Qdrant
 
     # Run the similarity search for all properties in Qdrant or from provided list, saving results to CSV
-    search_and_save_similar_properties(client, searcher, filters=None, property_id_list=property_id_list,
+    search_and_save_similar_properties(client, searcher, filters=None, property_data=None,
                                        mode=SearchMode.BALANCED, top_k=5, output_csv="similar_properties.csv")
