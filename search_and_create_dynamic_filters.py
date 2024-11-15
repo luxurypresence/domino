@@ -41,7 +41,8 @@ def get_all_property_data_from_collection(client, collection_name):
                 "min_price": min_price,
                 "max_price": max_price,
                 "min_bedrooms": min_bedrooms,
-                "max_bedrooms": max_bedrooms
+                "max_bedrooms": max_bedrooms,
+                "property_type": record.payload.get("lp_property_type",)
             }
             property_data.append(data)
 
@@ -68,7 +69,8 @@ def search_and_save_similar_properties(client, searcher, property_data, mode=Sea
                 min_price=data["min_price"],
                 max_price=data["max_price"],
                 min_bedrooms=data["min_bedrooms"],
-                max_bedrooms=data["max_bedrooms"]
+                max_bedrooms=data["max_bedrooms"],
+                property_type=data['property_type']
             )
 
             # Find similar properties
@@ -109,5 +111,5 @@ if __name__ == "__main__":
     property_data = get_all_property_data_from_collection(client, collection_name)
 
     # Run the similarity search for all properties in Qdrant, saving results to CSV
-    search_and_save_similar_properties(client, searcher, property_data=property_data, mode=SearchMode.BALANCED, top_k=5,
+    search_and_save_similar_properties(client, searcher, property_data=property_data, mode=SearchMode.FEATURES_FOCUS, top_k=5,
                                        output_csv="search_and_create_dynamic_filters.csv")

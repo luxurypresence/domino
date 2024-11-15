@@ -111,4 +111,4 @@ if __name__ == "__main__":
 
     # Run the similarity search for all properties in Qdrant or from provided list, saving results to CSV
     search_and_save_similar_properties(client, searcher, filters=None, property_data=None,
-                                       mode=SearchMode.BALANCED, top_k=5, output_csv="similar_properties.csv")
+                                       mode=SearchMode.FEATURES_FOCUS, top_k=5, output_csv="similar_properties.csv")
