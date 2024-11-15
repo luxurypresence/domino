@@ -114,6 +114,6 @@ if __name__ == "__main__":
     property_data = get_all_property_data_from_collection(client, collection_name)
 
     # Run the similarity search for all properties in Qdrant, saving results to CSV
-    search_and_save_similar_properties(client, searcher, property_data=property_data, mode=SearchMode.BALANCED, top_k=5,
+    search_and_save_similar_properties(client, searcher, property_data=property_data, mode=SearchMode.FEATURES_FOCUS, top_k=5,
                                        output_csv="search_and_create_dynamic_filter.csv",
                                        limit=200)
