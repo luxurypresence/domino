@@ -52,21 +52,21 @@ class PropertyIndexer:
 
             # Generate embeddings
             text_embeddings = self.property_data.generate_text_embeddings(property_data)
-            image_embedding = self.property_data.generate_image_embedding(property_data["lp_photos"])
+            # image_embedding = self.property_data.generate_image_embedding(property_data["lp_photos"])
 
-            if image_embedding is None:
-                raise ValueError("Failed to generate image embeddings")
+            # if image_embedding is None:
+            #     raise ValueError("Failed to generate image embeddings")
 
             # Store normalized vectors in their respective collections
             collections = [
                 "location_vectors",
                 "features_vectors",
-                "visual_vectors"
+                # "visual_1image_vectors"
             ]
             vectors = [
                 text_embeddings["location"],
                 text_embeddings["features"],
-                image_embedding
+                # image_embedding
             ]
 
             for collection, vector in zip(collections, vectors):

@@ -99,6 +99,10 @@ class PropertySearcher:
                     if not all(amenity in prop.get('lp_listing_description', "") for amenity in filters.must_have_amenities):
                         continue
 
+                # Sale or lease filtering
+                if filters.sale_lease and filters.sale_lease != prop.get('lp_sale_lease'):
+                    continue
+
                 filtered_results.append(prop)
             except Exception as e:
                 logging.warning(f"Error applying filters to property {prop.get('id')}: {e}")
@@ -133,7 +137,7 @@ class PropertySearcher:
             search_results = {}
 
             # Iterate through each vector collection (e.g., location, features, visual)
-            for key in ["location", "features", "visual"]:
+            for key in ["location", "features", ]: #"visual_1image" "visual"
                 collection = f"{key}_vectors"
 
                 # Retrieve the vector for the property ID
@@ -173,6 +177,7 @@ class PropertySearcher:
                         properties.append(point[0].payload)
 
             # Apply filters to the properties
+            filters.sale_lease = initial_vector_result[0].payload.get('lp_sale_lease')
             filtered_results = self.apply_filters(properties, filters)
             return filtered_results[:top_k]
 

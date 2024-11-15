@@ -50,8 +50,8 @@ class PropertyData:
             # f"{property_data.get('neighborhood', '')} "
             f"{property_data.get('city', '')} "
             # f"{property_data.get('municipality', '')} "
-            f"{property_data.get('county_or_parish', '')}"
-            f"{property_data.get('state_or_province', '')}"
+            f"{property_data.get('county_or_parish', '')} "
+            f"{property_data.get('state_or_province', '')} "
             f"{property_data.get('country', '')}"
         )
 
@@ -61,9 +61,10 @@ class PropertyData:
             *property_data.get('exterior_features', []),
             *property_data.get('appliances', []),
             *property_data.get('lot_features', []),
-            f"property_type: {property_data.get('property_type', 'not specified')}",
+            f"property_type: {property_data.get('lp_property_type', 'not specified')}",
             f"architectural_style: {property_data.get('architectural_style', 'not specified')}",
-            *property_data.get('lp_listing_description', 'no description'),
+            f"lp_sale_lease: {property_data.get('lp_sale_lease', 'not specified')}",
+            property_data.get('lp_listing_description', 'no description'),
             *property_data.get('accessibility_features', []),
             *property_data.get('building_features', []),
             *property_data.get('fireplace_features', []),

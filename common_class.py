@@ -31,3 +31,4 @@ class PropertyFilters:
     max_bathrooms: Optional[int] = None
     property_type: Optional[str] = None
     must_have_amenities: List[str] = field(default_factory=list)
+    sale_lease: str = ''
