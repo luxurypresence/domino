@@ -38,6 +38,7 @@ def get_all_property_data_from_collection(client, collection_name):
             data = {
                 "property_id": record.id,
                 "lp_listing_id": record.payload.get("lp_listing_id"),
+                "lp_sale_lease": record.payload.get("lp_sale_lease"),
                 "min_price": min_price,
                 "max_price": max_price,
                 "min_bedrooms": min_bedrooms,
@@ -55,22 +56,24 @@ def get_all_property_data_from_collection(client, collection_name):
 
 # Function to search similar properties for all properties in Qdrant or from provided property ID list, and save to CSV
 def search_and_save_similar_properties(client, searcher, property_data, mode=SearchMode.BALANCED, top_k=5,
-                                       output_csv="search_and_create_dynamic_filters.csv"):
+                                       output_csv="search_and_create_dynamic_filters.csv",
+                                       limit=200):
     # Step 1: Open CSV file to write similar properties for each property_id
     with open(output_csv, mode="w", newline="") as csvfile:
         csv_writer = csv.writer(csvfile)
         # Write the header
         csv_writer.writerow(["property_id", "similar_property_ids"])
-
+        property_data_part= property_data[:limit/2] + property_data[-limit/2:]
         # Iterate over each property to find similar properties with dynamic filters
-        for data in property_data:
+        for data in property_data_part:
             # Create a dynamic filter for each property based on its attributes
             filters = PropertyFilters(
                 min_price=data["min_price"],
                 max_price=data["max_price"],
                 min_bedrooms=data["min_bedrooms"],
                 max_bedrooms=data["max_bedrooms"],
-                property_type=data['property_type']
+                property_type=data['property_type'],
+                sale_lease=data["lp_sale_lease"]
             )
 
             # Find similar properties
@@ -112,4 +115,5 @@ if __name__ == "__main__":
 
     # Run the similarity search for all properties in Qdrant, saving results to CSV
     search_and_save_similar_properties(client, searcher, property_data=property_data, mode=SearchMode.FEATURES_FOCUS, top_k=5,
-                                       output_csv="search_and_create_dynamic_filters.csv")
+                                       output_csv="search_and_create_dynamic_filters.csv",
+                                       limit=200)

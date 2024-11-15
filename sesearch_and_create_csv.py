@@ -46,7 +46,7 @@ def get_all_property_ids_from_collection(client, collection_name):
 
 # Function to search similar properties for all properties in Qdrant or from provided property ID list, and save to CSV
 def search_and_save_similar_properties(client, searcher, filters=None, property_data=None, mode=SearchMode.BALANCED,
-                                       top_k=5, output_csv="similar_properties.csv"):
+                                       top_k=5, output_csv="similar_properties.csv", limit=120):
     # Step 1: Retrieve property IDs from Qdrant if no list is provided
     if property_data is not None:
         logging.info("Using provided property ID list for similarity search.")
@@ -66,9 +66,10 @@ def search_and_save_similar_properties(client, searcher, filters=None, property_
         csv_writer = csv.writer(csvfile)
         # Write the header
         csv_writer.writerow(["property_id", "similar_property_ids"])
+        property_data_part = property_data[:limit/2] + property_data[-limit/2:]
 
         # Iterate over each property ID to find similar properties
-        for property in property_data:
+        for property in property_data_part:
             # Find similar properties
             similar_properties = searcher.search_similar_properties(
                 property_id=property['property_id'],
@@ -103,7 +104,8 @@ if __name__ == "__main__":
         max_price=1000000.0,
         min_bedrooms=2,
         max_bedrooms=4,
-        must_have_amenities=["parking"]
+        must_have_amenities=["parking"],
+        sale_lease='SALE'
     )
 
     # Example property ID list (optional; will fetch from Qdrant if not provided)
@@ -111,4 +113,5 @@ if __name__ == "__main__":
 
     # Run the similarity search for all properties in Qdrant or from provided list, saving results to CSV
     search_and_save_similar_properties(client, searcher, filters=None, property_data=None,
-                                       mode=SearchMode.FEATURES_FOCUS, top_k=5, output_csv="similar_properties.csv")
+                                       mode=SearchMode.FEATURES_FOCUS, top_k=5, output_csv="similar_properties.csv",
+                                       limit=120)
