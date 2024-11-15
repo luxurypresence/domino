@@ -31,9 +31,9 @@ class PropertySearcher:
                 "visual": 0.2
             },
             SearchMode.VISUAL_FOCUS.value: {
-                "location": 0.1,
-                "features": 0.1,
-                "visual": 0.8
+                "location": 0.01,
+                "features": 0.01,
+                "visual": 0.98
             },
             SearchMode.FEATURES_FOCUS.value: {
                 "location": 0.1,
@@ -76,8 +76,8 @@ class PropertySearcher:
                         logging.info(f"Property {prop['id']} excluded due to max_price filter.")
                         continue
                 elif 'list_price' in prop and prop.get('list_price'):
-                    if filters.min_price > prop.get('list_price') or filters.max_price < prop.get('list_price'):
-                        logging.info(f"Property {prop['id']} excluded due to price filter.")
+                    if ((filters.min_price and filters.min_price > prop.get('list_price')) or
+                            (filters.max_price and filters.max_price < prop.get('list_price'))):
                         continue
                 else:
                     logging.info(f"Property {prop['id']} excluded due to missing price information.")
@@ -110,8 +110,7 @@ class PropertySearcher:
                     continue
 
                 # Property type filtering
-                if filters.property_type is not None and prop.get('property_type') != filters.property_type:
-                    logging.info(f"Property {prop['id']} excluded due to property_type filter.")
+                if filters.property_type is not None and prop.get('lp_property_type') != filters.property_type:
                     continue
 
                 # Amenities filtering
@@ -163,7 +162,8 @@ class PropertySearcher:
             # Initialize a dictionary to store search results
             search_results = {}
 
-            for key in ["location", "features"]:
+            # Iterate through each vector collection (e.g., location, features, visual)
+            for key in ["location", "features", ]: #"visual_1image" "visual". "location", "features",
                 collection = f"{key}_vectors"
 
                 initial_vector_result = self.client.retrieve(
@@ -197,8 +197,11 @@ class PropertySearcher:
                     if prop_id != property_id:
                         properties.append(point[0].payload)
             # Apply filters to the properties
-            if filters:
-                filters.sale_lease = initial_vector_result[0].payload.get('lp_sale_lease')
+            if not filters:
+                filters = PropertyFilters(
+                    sale_lease = ''
+                )
+            filters.sale_lease = initial_vector_result[0].payload.get('lp_sale_lease')
             filtered_results = self.apply_filters(properties, filters)
             logging.info("Top similar properties after filters:")
             for rank, prop in enumerate(filtered_results[:top_k], start=1):
