@@ -24,9 +24,9 @@ class PropertySearcher:
                 "visual": 0.2
             },
             SearchMode.VISUAL_FOCUS.value: {
-                "location": 0.1,
-                "features": 0.1,
-                "visual": 0.8
+                "location": 0.01,
+                "features": 0.01,
+                "visual": 0.98
             },
             SearchMode.FEATURES_FOCUS.value: {
                 "location": 0.1,
@@ -65,7 +65,8 @@ class PropertySearcher:
                     if filters.max_price is not None and price_min > filters.max_price:
                         continue
                 elif 'list_price' in prop and prop.get('list_price'):
-                    if filters.min_price > prop.get('list_price') or filters.max_price < prop.get('list_price'):
+                    if ((filters.min_price and filters.min_price > prop.get('list_price')) or
+                            (filters.max_price and filters.max_price < prop.get('list_price'))):
                         continue
                 else:
                     continue  # Exclude properties without price information
@@ -137,7 +138,7 @@ class PropertySearcher:
             search_results = {}
 
             # Iterate through each vector collection (e.g., location, features, visual)
-            for key in ["location", "features", ]: #"visual_1image" "visual"
+            for key in ["location", "features", ]: #"visual_1image" "visual". "location", "features",
                 collection = f"{key}_vectors"
 
                 # Retrieve the vector for the property ID
@@ -177,8 +178,11 @@ class PropertySearcher:
                         properties.append(point[0].payload)
 
             # Apply filters to the properties
-            if filters:
-                filters.sale_lease = initial_vector_result[0].payload.get('lp_sale_lease')
+            if not filters:
+                filters = PropertyFilters(
+                    sale_lease = ''
+                )
+            filters.sale_lease = initial_vector_result[0].payload.get('lp_sale_lease')
             filtered_results = self.apply_filters(properties, filters)
             return filtered_results[:top_k]
 
