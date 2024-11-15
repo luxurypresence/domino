@@ -7,7 +7,14 @@ from qdrant_client import QdrantClient, models
 from common_class import SearchMode, PropertyFilters
 
 # Set up logging configuration
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler("property_searcher.log"),  # Log to a file
+        logging.StreamHandler()  # Also log to console
+    ]
+)
 
 class PropertySearcher:
     """
@@ -57,39 +64,50 @@ class PropertySearcher:
         filtered_results = []
         for prop in properties:
             try:
+                logging.info(f"Applying filters to property {prop['id']}")
+
                 # Price filtering
                 if 'price_range' in prop and prop.get('price_range'):
                     price_min, price_max = map(float, prop['price_range'].split('-'))
                     if filters.min_price is not None and price_max < filters.min_price:
+                        logging.info(f"Property {prop['id']} excluded due to min_price filter.")
                         continue
                     if filters.max_price is not None and price_min > filters.max_price:
+                        logging.info(f"Property {prop['id']} excluded due to max_price filter.")
                         continue
                 elif 'list_price' in prop and prop.get('list_price'):
                     if ((filters.min_price and filters.min_price > prop.get('list_price')) or
                             (filters.max_price and filters.max_price < prop.get('list_price'))):
                         continue
                 else:
-                    continue  # Exclude properties without price information
+                    logging.info(f"Property {prop['id']} excluded due to missing price information.")
+                    continue
 
                 # Bedroom filtering
                 bedrooms = prop.get('bedrooms_total', None)
                 if bedrooms is not None:
                     if filters.min_bedrooms is not None and bedrooms < filters.min_bedrooms:
+                        logging.info(f"Property {prop['id']} excluded due to min_bedrooms filter.")
                         continue
                     if filters.max_bedrooms is not None and bedrooms > filters.max_bedrooms:
+                        logging.info(f"Property {prop['id']} excluded due to max_bedrooms filter.")
                         continue
                 else:
-                    continue  # Exclude properties without bedroom information
+                    logging.info(f"Property {prop['id']} excluded due to missing bedroom information.")
+                    continue
 
                 # Bathroom filtering
                 bathrooms = prop.get('lp_calculated_bath', None)
                 if bathrooms is not None:
                     if filters.min_bathrooms is not None and bathrooms < filters.min_bathrooms:
+                        logging.info(f"Property {prop['id']} excluded due to min_bathrooms filter.")
                         continue
                     if filters.max_bathrooms is not None and bathrooms > filters.max_bathrooms:
+                        logging.info(f"Property {prop['id']} excluded due to max_bathrooms filter.")
                         continue
                 else:
-                    continue  # Exclude properties without bathroom information
+                    logging.info(f"Property {prop['id']} excluded due to missing bathroom information.")
+                    continue
 
                 # Property type filtering
                 if filters.property_type is not None and prop.get('lp_property_type') != filters.property_type:
@@ -97,13 +115,20 @@ class PropertySearcher:
 
                 # Amenities filtering
                 if filters.must_have_amenities:
-                    if not all(amenity in prop.get('lp_listing_description', "") for amenity in filters.must_have_amenities):
+                    missing_amenities = [
+                        amenity for amenity in filters.must_have_amenities
+                        if amenity not in prop.get('lp_listing_description', "")
+                    ]
+                    if missing_amenities:
+                        logging.info(f"Property {prop['id']} excluded due to missing amenities: {missing_amenities}")
                         continue
 
                 # Sale or lease filtering
                 if filters.sale_lease and filters.sale_lease != prop.get('lp_sale_lease'):
+                    logging.info(f"Property {prop['id']} excluded due to sale_lease filter.")
                     continue
 
+                logging.info(f"Property {prop['id']} passed all filters.")
                 filtered_results.append(prop)
             except Exception as e:
                 logging.warning(f"Error applying filters to property {prop.get('id')}: {e}")
@@ -141,42 +166,36 @@ class PropertySearcher:
             for key in ["location", "features", ]: #"visual_1image" "visual". "location", "features",
                 collection = f"{key}_vectors"
 
-                # Retrieve the vector for the property ID
                 initial_vector_result = self.client.retrieve(
                     collection_name=collection,
                     ids=[property_id],
                     with_vectors=True
                 )
 
-                # Ensure we retrieved a valid vector for the property ID
                 if not initial_vector_result or not initial_vector_result[0].vector:
                     raise ValueError(f"Property ID {property_id} not found in {collection}")
 
-                # Extract the vector for similarity search
                 vector = initial_vector_result[0].vector
 
-                # Perform similarity search using query_points
                 results = self.client.search(
                     collection_name=collection,
-                    query_vector=vector,  # Replace 'vector' with 'query_vector'
-                    limit=top_k * 2  # Replace 'top' with 'limit'
+                    query_vector=vector,
+                    limit=top_k * 2
                 )
                 search_results[key] = results
 
-            # Merge results using weighted Reciprocal Rank Fusion
             merged_results = self._weighted_rrf_merge(search_results, weights)
 
-            # Retrieve full property data, exclude the original property, and apply filters
             properties = []
-            for prop_id, _ in merged_results[:top_k * 5]:
+            for prop_id, score in merged_results[:top_k * 5]:
+                logging.info(f"Property ID {prop_id} has merged score {score:.4f}")
                 point = self.client.retrieve(
                     collection_name="location_vectors",
                     ids=[prop_id]
                 )
                 if point and point[0].payload:
-                    if prop_id != property_id:  # Exclude the query property itself
+                    if prop_id != property_id:
                         properties.append(point[0].payload)
-
             # Apply filters to the properties
             if not filters:
                 filters = PropertyFilters(
@@ -184,6 +203,10 @@ class PropertySearcher:
                 )
             filters.sale_lease = initial_vector_result[0].payload.get('lp_sale_lease')
             filtered_results = self.apply_filters(properties, filters)
+            logging.info("Top similar properties after filters:")
+            for rank, prop in enumerate(filtered_results[:top_k], start=1):
+                logging.info(f"Rank {rank}: Property {prop['id']} passed filters and scored highly.")
+
             return filtered_results[:top_k]
 
         except Exception as e:
@@ -210,13 +233,20 @@ class PropertySearcher:
         scores = {}
         for key, results in search_results.items():
             weight = weights.get(key, 0)
+            logging.info(f"Merging results for {key} collection with weight {weight}")
             for rank, result in enumerate(results):
                 property_id = result.id
-                # Compute the weighted RRF score
-                scores[property_id] = scores.get(property_id, 0) + weight * (1 / (k + rank + 1))
+                weighted_score = weight * (1 / (k + rank + 1))
+                scores[property_id] = scores.get(property_id, 0) + weighted_score
+                logging.info(
+                    f"Property {property_id} in {key} ranked {rank} contributes {weighted_score:.4f} to the score."
+                )
 
-        # Sort properties by their aggregated scores in descending order
         sorted_properties = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+        for prop_id, score in sorted_properties:
+            logging.info(f"Final aggregated score for property {prop_id}: {score:.4f}")
+
         return sorted_properties
 
     def print_collection_data(self, collection_name: str, limit: int = 10):
