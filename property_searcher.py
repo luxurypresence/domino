@@ -92,7 +92,7 @@ class PropertySearcher:
                     continue  # Exclude properties without bathroom information
 
                 # Property type filtering
-                if filters.property_type is not None and prop.get('property_type') != filters.property_type:
+                if filters.property_type is not None and prop.get('lp_property_type') != filters.property_type:
                     continue
 
                 # Amenities filtering
