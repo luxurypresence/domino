@@ -66,7 +66,7 @@ def search_and_save_similar_properties(client, searcher, filters=None, property_
         csv_writer = csv.writer(csvfile)
         # Write the header
         csv_writer.writerow(["property_id", "similar_property_ids"])
-        property_data_part = property_data[:limit/2] + property_data[-limit/2:]
+        property_data_part = property_data[:limit//2] + property_data[-limit//2:]
 
         # Iterate over each property ID to find similar properties
         for property in property_data_part:

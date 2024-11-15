@@ -63,7 +63,7 @@ def search_and_save_similar_properties(client, searcher, property_data, mode=Sea
         csv_writer = csv.writer(csvfile)
         # Write the header
         csv_writer.writerow(["property_id", "similar_property_ids"])
-        property_data_part= property_data[:limit/2] + property_data[-limit/2:]
+        property_data_part= property_data[:limit//2] + property_data[-limit//2:]
         # Iterate over each property to find similar properties with dynamic filters
         for data in property_data_part:
             # Create a dynamic filter for each property based on its attributes
