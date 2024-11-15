@@ -196,8 +196,9 @@ class PropertySearcher:
                 if point and point[0].payload:
                     if prop_id != property_id:
                         properties.append(point[0].payload)
-
-            filters.sale_lease = initial_vector_result[0].payload.get('lp_sale_lease')
+            # Apply filters to the properties
+            if filters:
+                filters.sale_lease = initial_vector_result[0].payload.get('lp_sale_lease')
             filtered_results = self.apply_filters(properties, filters)
             logging.info("Top similar properties after filters:")
             for rank, prop in enumerate(filtered_results[:top_k], start=1):
