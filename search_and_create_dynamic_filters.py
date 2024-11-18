@@ -24,7 +24,7 @@ def get_all_property_data_from_collection(client, collection_name):
             bedrooms_total = record.payload.get("bedrooms_total", 0)  # Default to 0 if not available
 
             # Calculate smart filter bounds for price based on ±5% of list_price
-            price_variation = 0.05 * list_price  # 5% of list_price
+            price_variation = 0.11 * list_price  # 10% of list_price1``
             min_price = max(0, list_price - price_variation)  # Ensuring no negative value
             max_price = list_price + price_variation
 
@@ -114,6 +114,9 @@ if __name__ == "__main__":
     property_data = get_all_property_data_from_collection(client, collection_name)
 
     # Run the similarity search for all properties in Qdrant, saving results to CSV
-    search_and_save_similar_properties(client, searcher, property_data=property_data, mode=SearchMode.FEATURES_FOCUS, top_k=5,
-                                       output_csv="search_and_create_dynamic_filter.csv",
-                                       limit=200)
+    for mode in [SearchMode.BALANCED, SearchMode.BALANCED_WITHOUT_VISUAL,
+                 SearchMode.LOCATION_FOCUS, SearchMode.FEATURES_FOCUS,
+                 SearchMode.DESCRIPTION_FOCUS, SearchMode.VISUAL_FOCUS]:
+        search_and_save_similar_properties(client, searcher, property_data=property_data, mode=mode, top_k=5,
+                                           output_csv=f"similar_properties_dynamic_filter_{mode}.csv",
+                                           limit=200)
