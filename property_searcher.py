@@ -26,24 +26,40 @@ class PropertySearcher:
         # Define weights for each search mode
         self.search_modes = {
             SearchMode.BALANCED.value: {
-                "location": 0.4,
-                "features": 0.4,
-                "visual": 0.2
+                "description": 0.25,
+                "location": 0.25,
+                "features": 0.25,
+                "visual": 0.25
+            },
+            SearchMode.BALANCED_WITHOUT_VISUAL.value: {
+                "description": 0.33,
+                "location": 0.33,
+                "features": 0.33,
+                "visual": 0.01
             },
             SearchMode.VISUAL_FOCUS.value: {
+                "description": 0.01,
                 "location": 0.01,
                 "features": 0.01,
-                "visual": 0.98
+                "visual": 0.97
             },
             SearchMode.FEATURES_FOCUS.value: {
-                "location": 0.1,
-                "features": 0.8,
-                "visual": 0.1
+                "description": 0.01,
+                "location": 0.01,
+                "features": 0.97,
+                "visual": 0.01
             },
             SearchMode.LOCATION_FOCUS.value: {
-                "location": 0.8,
-                "features": 0.1,
-                "visual": 0.1
+                "location": 0.97,
+                "features": 0.01,
+                "description": 0.01,
+                "visual": 0.01
+            },
+            SearchMode.DESCRIPTION_FOCUS.value: {
+                "location": 0.01,
+                "features": 0.01,
+                "description": 0.97,
+                "visual": 0.01
             }
         }
 

@@ -17,6 +17,8 @@ class SearchMode(Enum):
     VISUAL_FOCUS = "visual_focus"
     FEATURES_FOCUS = "features_focus"
     LOCATION_FOCUS = "location_focus"
+    DESCRIPTION_FOCUS = "description_focus"
+    BALANCED_WITHOUT_VISUAL = "balanced_without_visual"
 
 @dataclass
 class PropertyFilters:
