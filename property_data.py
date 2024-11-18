@@ -44,6 +44,10 @@ class PropertyData:
         Returns:
             Dict[str, np.ndarray]: A dictionary of normalized embeddings.
         """
+        for key, value in property_data.items():
+            if isinstance(value, str) and value is None:
+                property_data[key] = ''
+
         # Prepare text data for embeddings
         location_text = self.preprocess_text(
             # f"{property_data.get('location_description', '')} "
@@ -61,10 +65,10 @@ class PropertyData:
             *property_data.get('exterior_features', []),
             *property_data.get('appliances', []),
             *property_data.get('lot_features', []),
-            f"property_type: {property_data.get('lp_property_type', 'not specified')}",
-            f"architectural_style: {property_data.get('architectural_style', 'not specified')}",
-            f"lp_sale_lease: {property_data.get('lp_sale_lease', 'not specified')}",
-            property_data.get('lp_listing_description', 'no description'),
+            f"property_type: {property_data.get('lp_property_type', '')}",
+            f"architectural_style: {property_data.get('architectural_style', '')}",
+            f"lp_sale_lease: {property_data.get('lp_sale_lease', '')}",
+            # property_data.get('lp_listing_description', 'no description'),
             *property_data.get('accessibility_features', []),
             *property_data.get('building_features', []),
             *property_data.get('fireplace_features', []),
@@ -75,10 +79,15 @@ class PropertyData:
             *property_data.get('waterfront_features', []),
         ]))
 
+        description_text = self.preprocess_text(
+            property_data.get('lp_listing_description', ''),
+        )
+
         # Generate embeddings
         embeddings = {
             "location": self.text_model.encode(location_text),
-            "features": self.text_model.encode(property_features_text)
+            "features": self.text_model.encode(property_features_text),
+            "description": self.text_model.encode(description_text)
         }
 
         # Normalize embeddings
@@ -98,7 +107,7 @@ class PropertyData:
             Optional[np.ndarray]: The aggregated image embedding, or None if failed.
         """
         embeddings = []
-        for url in image_urls[:1]:  # Limit to first 5 images
+        for url in image_urls[:5]:  # Limit to first 5 images
             try:
                 # Download image
                 response = requests.get(url, timeout=10)
